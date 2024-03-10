@@ -1,6 +1,11 @@
 package com.example.osmzhttpserver;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -8,13 +13,12 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private SocketServer s;
-    private TextView tv;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,7 +27,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Button btn1 = (Button)findViewById(R.id.button1);
         Button btn2 = (Button)findViewById(R.id.button2);
-        tv = (TextView)findViewById(R.id.textView1);
 
         btn1.setOnClickListener(this);
         btn2.setOnClickListener(this);

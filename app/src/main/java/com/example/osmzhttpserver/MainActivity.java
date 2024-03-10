@@ -10,11 +10,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import java.io.File;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private SocketServer s;
-    private TextView tv;
+    private TextView messages_list;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,11 +24,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         Button btn1 = (Button)findViewById(R.id.button1);
         Button btn2 = (Button)findViewById(R.id.button2);
-        tv = (TextView)findViewById(R.id.textView1);
+        messages_list = (TextView)findViewById(R.id.messages_list);
 
         btn1.setOnClickListener(this);
         btn2.setOnClickListener(this);
-
     }
     
     private void getPermissions() {
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String sdPath = Environment.getExternalStorageDirectory().getPath();
             File file = new File(sdPath + "/website/index.html");
             if (file.exists()) {
-                s = new SocketServer(this);
+                s = new SocketServer(this, messages_list);
                 s.start();
             } else {
                 Log.d("SERVER", "index.html does not exist");
@@ -50,7 +50,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     
     @Override
     public void onClick(View v) {
-
         if (v.getId() == R.id.button1) {
             getPermissions();
         }
@@ -59,7 +58,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             try {
                 s.join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                StackTraceElement[] trace = e.getStackTrace();
+                for (int i = 0; i < trace.length; i++) {
+                    Log.d("SERVER", "SocketServer(" + e.getStackTrace()[1].getLineNumber() + "): " + Arrays.toString(trace));
+                }
             }
         }
     }

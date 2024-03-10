@@ -12,15 +12,22 @@ import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.concurrent.Semaphore;
+import android.widget.TextView;
+import android.os.Handler;
+import java.util.Calendar;
+import java.util.Date;
 
-public class ServerThread extends Thread {
 
+final public class ServerThread extends Thread {
     Socket s;
     Semaphore semaphore; 
+    String message;
+    SocketServer socketServer;
 
-    public ServerThread(Socket s, Semaphore semaphore) {
+    public ServerThread(Socket s, Semaphore semaphore, SocketServer socketServer) {
         this.semaphore = semaphore;
         this.s = s;
+        this.socketServer = socketServer;
     }
     
     @Override
@@ -31,17 +38,25 @@ public class ServerThread extends Thread {
 
         String tmp;
         String reqFile = "/";
+        String[] log = {"", " -- [", "", "", " -- ", ""};
 
-// in does not exist 
-            while (!(tmp = in.readLine()).isEmpty()) {
-                Log.d("HTTPREQUEST", tmp);
+            while ((tmp = in.readLine()) != null && !tmp.isEmpty()) {
+                Log.d("HTTPREQUEST", "Request: " + tmp);
                 if (tmp.startsWith("GET")) {
+                    log[2] = Calendar.getInstance().getTime().toString() + "] ";
+                    log[3] = tmp;
                     reqFile = tmp.split(" ")[1];
                     if (reqFile.equals("/")) {
                         reqFile = "/index.html";
                     }
                 }
-                tmp = in.readLine();
+                if (tmp.startsWith("Host:")) {
+                    log[0] = tmp.substring(6, tmp.length());
+                }
+                if (tmp.startsWith("User-Agent:")) {
+                    log[5] = tmp.substring(12, tmp.length());
+                    socketServer.writeMessage(String.join("", log));
+                }
             }
 
             String sdPath = Environment.getExternalStorageDirectory().getPath();
@@ -87,10 +102,10 @@ public class ServerThread extends Thread {
             s.close();
             Log.d("SERVER", "Socket Closed");
         } catch (IOException e) {
-            Log.d("SERVER", "Error");
+            Log.d("SERVER", "ServerThread(" + e.getStackTrace()[1].getLineNumber() + "): " + e.getMessage());
             StackTraceElement[] trace = e.getStackTrace();
             for (int i = 0; i < trace.length; i++) {
-                Log.d("SERVER", Arrays.toString(trace));
+                Log.d("SERVER", "Catch: " + Arrays.toString(trace));
             }
         }
         finally {

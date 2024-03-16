@@ -55,6 +55,9 @@ final public class ServerThread extends Thread {
                     if (reqFile.equals("/")) {
                         reqFile = "/index.html";
                     }
+                    if (reqFile.equals("/streams/telemetry")) {
+                        reqFile = "/streams/telemetry.json";
+                    }
                 }
                 if (tmp.startsWith("Host:")) {
                     log[0] = tmp.substring(6, tmp.length());
@@ -70,31 +73,46 @@ final public class ServerThread extends Thread {
             String extension = MimeTypeMap.getFileExtensionFromUrl(file.getAbsolutePath());
 
             if (file.exists()) {
-                if (extension.equals("html")) {
-                    out.write("HTTP/1.1 200 OK\n".getBytes());
-                    out.write("Content-Type: text/html\n".getBytes());
-                    String str1 = "Content-Length: " + file.length() + "\n";
-                    out.write(str1.getBytes());
-                    out.write("\n".getBytes());
-                    byte[] bytes = Files.readAllBytes(file.toPath());
-                    for (byte aByte : bytes) {
-                        out.write(aByte);
-                    }
-                } else if (extension.equals("png")) {
-                    out.write("HTTP/1.1 200 OK\n".getBytes());
-                    out.write("Content-Type: image/png\n".getBytes());
-                    String str2 = "Content-Length: " + file.length() + "\n";
-                    out.write(str2.getBytes());
-                    out.write("\n".getBytes());
-
-                    try (FileInputStream fileInputStream = new FileInputStream(file);
-                         OutputStream os = s.getOutputStream()) {
-                        byte[] buffer = new byte[8192];
-                        int bytesRead;
-                        while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                            os.write(buffer, 0, bytesRead);
+                switch (extension) {
+                    case "html" -> {
+                        out.write("HTTP/1.1 200 OK\n".getBytes());
+                        out.write("Content-Type: text/html\n".getBytes());
+                        String str1 = "Content-Length: " + file.length() + "\n";
+                        out.write(str1.getBytes());
+                        out.write("\n".getBytes());
+                        byte[] bytes = Files.readAllBytes(file.toPath());
+                        for (byte aByte : bytes) {
+                            out.write(aByte);
                         }
-                        os.flush();
+                    }
+                    case "png" -> {
+                        out.write("HTTP/1.1 200 OK\n".getBytes());
+                        out.write("Content-Type: image/png\n".getBytes());
+                        String str2 = "Content-Length: " + file.length() + "\n";
+                        out.write(str2.getBytes());
+                        out.write("\n".getBytes());
+
+                        try (FileInputStream fileInputStream = new FileInputStream(file);
+                             OutputStream os = s.getOutputStream()) {
+                            byte[] buffer = new byte[8192];
+                            int bytesRead;
+                            while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                                os.write(buffer, 0, bytesRead);
+                            }
+                            os.flush();
+                        }
+                    }
+                    case "json" -> {
+                        Log.d("SERVER", "Sending json...");
+                        out.write("HTTP/1.1 200 OK\n".getBytes());
+                        out.write("Content-Type: application/json\n".getBytes());
+                        String str2 = "Content-Length: " + file.length() + "\n";
+                        out.write(str2.getBytes());
+                        out.write("\n".getBytes());
+                        byte[] bytes = Files.readAllBytes(file.toPath());
+                        for (byte aByte : bytes) {
+                            out.write(aByte);
+                        }
                     }
                 }
             } else {

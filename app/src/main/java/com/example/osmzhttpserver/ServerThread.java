@@ -1,7 +1,9 @@
 package com.example.osmzhttpserver;
+
 import android.os.Environment;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,39 +13,43 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.concurrent.Semaphore;
-import android.widget.TextView;
-import android.os.Handler;
 import java.util.Calendar;
-import java.util.Date;
+import java.util.concurrent.Semaphore;
 
 
 final public class ServerThread extends Thread {
     Socket s;
-    Semaphore semaphore; 
+    Semaphore semaphore;
     String message;
     SocketServer socketServer;
+    DataProvider dataProvider;
 
-    public ServerThread(Socket s, Semaphore semaphore, SocketServer socketServer) {
+    public ServerThread(Socket s,
+                        Semaphore semaphore,
+                        SocketServer socketServer,
+                        DataProvider dataProvider
+    ) {
         this.semaphore = semaphore;
         this.s = s;
         this.socketServer = socketServer;
+        this.dataProvider = dataProvider;
     }
-    
+
     @Override
     public void run() {
         try {
-        OutputStream out = s.getOutputStream();
-        BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
+            OutputStream out = s.getOutputStream();
+            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
 
-        String tmp;
-        String reqFile = "/";
-        String[] log = {"", " -- [", "", "", " -- ", ""};
+            String tmp;
+            String reqFile = "/";
+            String[] log = {"", " -- [", "", "", " -- ", ""};
 
             while ((tmp = in.readLine()) != null && !tmp.isEmpty()) {
-                Log.d("HTTPREQUEST", "Request: " + tmp);
+                // Log.d("HTTPREQUEST", "Request: " + tmp);
                 if (tmp.startsWith("GET")) {
-                    log[2] = Calendar.getInstance().getTime().toString() + "] ";
+                    Log.d("HTTPREQUEST", "Request: " + tmp);
+                    log[2] = Calendar.getInstance().getTime() + "] ";
                     log[3] = tmp;
                     reqFile = tmp.split(" ")[1];
                     if (reqFile.equals("/")) {
@@ -107,8 +113,7 @@ final public class ServerThread extends Thread {
             for (int i = 0; i < trace.length; i++) {
                 Log.d("SERVER", "Catch: " + Arrays.toString(trace));
             }
-        }
-        finally {
+        } finally {
             Log.d("SERVER", "Releasing semaphore");
             semaphore.release();
         }

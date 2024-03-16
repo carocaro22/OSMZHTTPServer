@@ -1,13 +1,15 @@
 package com.example.osmzhttpserver;
+
 import android.content.Context;
 import android.util.Log;
+import android.widget.TextView;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.concurrent.Semaphore;
-import android.widget.TextView;
 
 final public class SocketServer extends Thread {
 
@@ -16,13 +18,16 @@ final public class SocketServer extends Thread {
     boolean bRunning;
     TextView messages_list;
     String message;
+
+    DataProvider dataProvider;
     
     Context context;
     Semaphore semaphore = new Semaphore(2, true);
 
-    public SocketServer(Context context, TextView messages_list) {
+    public SocketServer(Context context, TextView messages_list, DataProvider dataProvider) {
         this.context = context;
         this.messages_list = messages_list;
+        this.dataProvider = dataProvider;
     }
 
     public void close() {
@@ -51,7 +56,8 @@ final public class SocketServer extends Thread {
                 Log.d("SERVER", "Socket Accepted");
 
                 if (semaphore.tryAcquire()) {
-                    ServerThread serverThread = new ServerThread(s, semaphore, this);
+                    ServerThread serverThread = new ServerThread(
+                            s, semaphore, this, dataProvider);
                     serverThread.start();
                 } else {
                     out.write("HTTP 503 Server too busy\n".getBytes());

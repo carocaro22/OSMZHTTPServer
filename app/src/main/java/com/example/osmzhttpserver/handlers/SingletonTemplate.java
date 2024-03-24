@@ -3,9 +3,7 @@ package com.example.osmzhttpserver.handlers;
 public class SingletonTemplate {
     private static SingletonTemplate instance;
 
-    private SingletonTemplate() {
-        // private constructor to prevent instantiation
-    }
+    private SingletonTemplate() { }
 
     public static synchronized SingletonTemplate getInstance() {
         if (instance == null) {

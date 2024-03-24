@@ -19,7 +19,6 @@ import com.example.osmzhttpserver.services.GPSService;
 import com.example.osmzhttpserver.services.SensorsService;
 
 import java.io.File;
-import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -57,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String sdPath = Environment.getExternalStorageDirectory().getPath();
             File file = new File(sdPath + "/website/index.html");
             if (file.exists()) {
-                s = new SocketServer(this, messages_list, dataProvider);
+                s = new SocketServer(messages_list, dataProvider);
                 s.start();
             } else {
                 Log.d("SERVER", "index.html does not exist");
@@ -74,17 +73,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         if (v.getId() == R.id.button1) {
             getPermissions();
-        }
-        if (v.getId() == R.id.button2) {
-            s.close();
-            try {
-                s.join();
-            } catch (InterruptedException e) {
-                StackTraceElement[] trace = e.getStackTrace();
-                for (int i = 0; i < trace.length; i++) {
-                    Log.d("SERVER", "SocketServer(" + e.getStackTrace()[1].getLineNumber() + "): " + Arrays.toString(trace));
-                }
-            }
         }
     }
 

@@ -21,7 +21,6 @@ public class ProcessHandler {
     BufferedReader p_in;
     BufferedReader p_error;
 
-
     byte[] handleProcess(String[] cmd) {
         Log.d("DEBUG", "handling proccess");
         for (String str : cmd) {
@@ -46,7 +45,7 @@ public class ProcessHandler {
 
         assert p != null;
 
-        Log.d("PROCESS", "Process was created!");
+        Log.d("ProcessHandler", "Process was created!");
         p_in = new BufferedReader(new InputStreamReader(p.getInputStream()));
         p_error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
@@ -59,7 +58,7 @@ public class ProcessHandler {
 
         try {
             while ((p_str = p_in.readLine()) != null && !p_str.isEmpty()) {
-                Log.d("PROCESS", p_str);
+                Log.d("ProcessHandler", p_str);
                 writeLine(p_str);
             }
         } catch (IOException e) {

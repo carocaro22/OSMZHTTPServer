@@ -12,7 +12,7 @@ public class CmdHandler {
         return instance;
     }
 
-    public void handleCommand(String reqFile) {
+    public byte[] handleCommand(String reqFile) {
         String formatted = reqFile.substring(5);
         String[] cmd;
         if (formatted.contains("%20")) {
@@ -20,6 +20,6 @@ public class CmdHandler {
         } else {
             cmd = new String[]{formatted};
         }
-        ProcessHandler.getInstance().handleProcess(cmd);
+        return ProcessHandler.getInstance().handleProcess(cmd);
     }
 }

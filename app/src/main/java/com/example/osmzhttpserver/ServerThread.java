@@ -54,15 +54,18 @@ final public class ServerThread extends Thread {
         } catch (IOException e) {
             Log.d("ServerThread", "Could not read socket line");
         }
+
+        byte[] response;
         if (requestHandler.getReqFile().startsWith("/cmd")) {
-            CmdHandler.getInstance().handleCommand(requestHandler.getReqFile());
+            response = CmdHandler.getInstance().handleCommand(requestHandler.getReqFile());
         } else {
-            byte[] response = fileHandler.getResponse(requestHandler.getReqFile());
-            try {
-                websiteOut.write(response);
-            } catch (IOException e) {
-                error.writingSocket();
-            }
+            response = fileHandler.getResponse(requestHandler.getReqFile());
+        }
+
+        try {
+            websiteOut.write(response);
+        } catch (IOException e) {
+            error.writingSocket();
         }
         flushSocket();
         try {

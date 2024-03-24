@@ -3,6 +3,7 @@ package com.example.osmzhttpserver;
 import android.util.Log;
 
 import com.example.osmzhttpserver.handlers.BufferHandler;
+import com.example.osmzhttpserver.handlers.CmdHandler;
 import com.example.osmzhttpserver.handlers.ErrorHandler;
 import com.example.osmzhttpserver.handlers.FileHandler;
 import com.example.osmzhttpserver.handlers.RequestHandler;
@@ -28,6 +29,7 @@ final public class ServerThread extends Thread {
     private final FileHandler fileHandler = FileHandler.getInstance();
     private final ErrorHandler error = ErrorHandler.getInstance();
 
+
     public ServerThread(Socket socket,
                         Semaphore semaphore,
                         DataProvider dataProvider
@@ -42,28 +44,34 @@ final public class ServerThread extends Thread {
         websiteOut = getOutputStream();
         websiteIn = getBufferedReader();
         String tmp;
+        String reqFile = "/";
 
         try {
             while ((tmp = websiteIn.readLine()) != null && !tmp.isEmpty()) {
                 requestHandler.handleRequest(tmp);
             }
+            //Log.d("DEBUG", "end of while loop");
         } catch (IOException e) {
             Log.d("ServerThread", "Could not read socket line");
         }
-        byte[] response = fileHandler.getResponse(requestHandler.getReqFile());
-        try {
-            websiteOut.write(response);
-        } catch (IOException e) {
-            error.writingSocket();
+        if (requestHandler.getReqFile().startsWith("/cmd")) {
+            CmdHandler.getInstance().handleCommand(requestHandler.getReqFile());
+        } else {
+            byte[] response = fileHandler.getResponse(requestHandler.getReqFile());
+            try {
+                websiteOut.write(response);
+            } catch (IOException e) {
+                error.writingSocket();
+            }
         }
         flushSocket();
         try {
             socket.close();
         } catch (IOException e) {
-            Log.d("SockerServer", "could not close socket");
+            Log.e("ServerThread", "Could not close socket", e);
         }
-        semaphore.release();
         BufferHandler.getInstance().resetBuffer();
+        semaphore.release();
     }
 
     void flushSocket() {

@@ -4,6 +4,7 @@ import android.util.Log;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class ErrorHandler {
     private static ErrorHandler instance;
@@ -35,8 +36,9 @@ public class ErrorHandler {
         return getBuffer();
     }
 
-    byte[] processStart() {
-        Log.d("ProcessHandler", "Could not start Process");
+    byte[] processStart(IOException e) {
+        Log.d("ProcessHandler", "Could not start Process", e);
+        Log.d("ProccessHandler", Objects.requireNonNull(e.getMessage()));
         writeLine("HTTP/1.1 404 OK");
         writeLine("Content-Type: text/html");
         writeLine("");

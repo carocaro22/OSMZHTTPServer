@@ -45,12 +45,30 @@ public class FileHandler {
             writeLine(file.getAbsolutePath());
             writeLine("There is no file in this directory");
         } else {
-            for (File someFile : files) {
-                writeLine(someFile.getName());
-                writeLine("<br>");
-            }
+            writeLine(createDirectoryList(file));
         }
         return getBuffer();
+    }
+
+    private String createDirectoryList(File directory) {
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body><a href=\"/cmd/cd%20..\">..</a><br>");
+
+        File[] files = directory.listFiles();
+        if (files != null) {
+            for (File file : files) {
+                String filePath = file.getPath();
+                String basePath = "storage/emulated/0/website/";
+                String relativePath = filePath.substring(basePath.length());
+                html.append("<a href=\"")
+                        .append(relativePath)
+                        .append("\">")
+                        .append(relativePath)
+                        .append("</a><br>");
+            }
+        }
+        html.append("</body></html>");
+        return html.toString();
     }
 
     private byte[] handleFile(File file) {

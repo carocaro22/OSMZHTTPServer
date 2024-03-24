@@ -9,8 +9,6 @@ public class RequestHandler {
     private static RequestHandler instance;
     private String reqFile;
 
-    private final ProcessHandler processHandler = ProcessHandler.getInstance();
-
     private RequestHandler() { }
 
     public static synchronized RequestHandler getInstance() {
@@ -36,12 +34,13 @@ public class RequestHandler {
                 // TODO: socketServer.writeMessage();
             }
 
+            FileHandler fileHandler = FileHandler.getInstance();
+
             if (reqFile.equals("/")) {
                 reqFile = "/index.html";
-            } else if (reqFile.equals("/streams/telemetry")) {
+            }
+            else if (reqFile.equals("/streams/telemetry")) {
                 reqFile = "/streams/telemetry.json";
-            } else if (reqFile.startsWith("/cmd")) {
-                handleCommand(reqFile);
             }
         }
     }
@@ -52,16 +51,5 @@ public class RequestHandler {
 
     public String getLog() {
         return String.join("", log);
-    }
-
-    void handleCommand(String reqFile) {
-        String formatted = reqFile.substring(5);
-        String[] cmd;
-        if (formatted.contains("%20")) {
-            cmd = formatted.split("%20");
-        } else {
-            cmd = new String[]{formatted};
-        }
-        processHandler.handleProcess(cmd);
     }
 }

@@ -18,27 +18,42 @@ public class ProcessHandler {
 
     ErrorHandler error = ErrorHandler.getInstance();
     BufferHandler bufferHandler = BufferHandler.getInstance();
+    BufferedReader p_in;
+    BufferedReader p_error;
+
 
     byte[] handleProcess(String[] cmd) {
-        byte[] err = null;
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        Process p = null;
+        Log.d("DEBUG", "handling proccess");
+        for (String str : cmd) {
+            Log.d("DEBUG", str);
+        }
 
+        ProcessBuilder pb;
+
+        if (cmd[0].equals("cd")) {
+            pb = new ProcessBuilder("sh", "-c", String.join(" ", cmd) + " && pwd");
+        } else {
+            pb = new ProcessBuilder(cmd);
+        }
+        byte[] err = null;
+        Process p = null;
         try {
             p = pb.start();
         } catch (IOException e) {
-            err = error.processStart();
+            err = error.processStart(e);
+            System.exit(1);
         }
+
         assert p != null;
 
-        BufferedReader p_in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        BufferedReader p_error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
         Log.d("PROCESS", "Process was created!");
+        p_in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+        p_error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
         String p_str;
         String p_error_str;
 
-        writeLine("HTTP/0.1 200 OK");
+        writeLine("HTTP/1.1 200 OK");
         writeLine("Content-Type: text/html");
         writeLine("");
 
@@ -49,6 +64,7 @@ public class ProcessHandler {
             }
         } catch (IOException e) {
             err = error.couldNotReadProccessAnswer();
+            System.exit(1);
         }
 
         try {
@@ -57,6 +73,7 @@ public class ProcessHandler {
             }
         } catch (IOException e) {
             err = error.processRead(e);
+            System.exit(1);
         }
         if (err != null) {
             return err;

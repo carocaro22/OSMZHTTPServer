@@ -1,7 +1,7 @@
 package com.example.osmzhttpserver;
 
 public class DataModel {
-    float[] light;
-    double latitude;
-    double longitude;
+    public float[] light;
+    public double latitude;
+    public double longitude;
 }

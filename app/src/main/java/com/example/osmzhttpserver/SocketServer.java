@@ -18,9 +18,7 @@ final public class SocketServer extends Thread {
     boolean bRunning;
     TextView messages_list;
     String message;
-
     DataProvider dataProvider;
-    
     Context context;
     Semaphore semaphore = new Semaphore(2, true);
 

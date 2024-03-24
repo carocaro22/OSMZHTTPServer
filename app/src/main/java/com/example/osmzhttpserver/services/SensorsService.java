@@ -1,4 +1,4 @@
-package com.example.osmzhttpserver;
+package com.example.osmzhttpserver.services;
 
 import android.annotation.SuppressLint;
 import android.hardware.Sensor;
@@ -6,11 +6,14 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.util.Log;
 
+import com.example.osmzhttpserver.DataModel;
+import com.example.osmzhttpserver.DataProvider;
+
 @SuppressLint("Registered")
 public class SensorsService implements SensorEventListener {
     DataProvider dataProvider;
 
-    SensorsService(DataProvider dataProvider) {
+    public SensorsService(DataProvider dataProvider) {
         this.dataProvider = dataProvider;
         Log.d("SENSOR", "Sensor service was created");
     }

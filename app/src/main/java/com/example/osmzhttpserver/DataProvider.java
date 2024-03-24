@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Environment;
 import android.util.Log;
 
+import com.example.osmzhttpserver.services.GPSService;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,12 +40,12 @@ public class DataProvider {
         }
     }
     // Call from Sensors Service
-    void getGpsData(DataModel model) {
+    public void getGpsData(DataModel model) {
         gpsService.getLastLocation(model);
     }
 
     // Call from GPSService
-    void writeToJsonFile(DataModel model) {
+    public void writeToJsonFile(DataModel model) {
         String sdPath = Environment.getExternalStorageDirectory().getPath();
         File sensorData = new File(sdPath + "/website/streams/", "telemetry.json");
         if (sensorData.exists()) {

@@ -6,11 +6,13 @@ import android.webkit.MimeTypeMap;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.concurrent.Semaphore;
@@ -19,10 +21,11 @@ import java.util.concurrent.Semaphore;
 final public class ServerThread extends Thread {
     Socket s;
     Semaphore semaphore;
-    String message;
     SocketServer socketServer;
     DataProvider dataProvider;
 
+    OutputStream websiteOut;
+    BufferedReader websiteIn;
     public ServerThread(Socket s,
                         Semaphore semaphore,
                         SocketServer socketServer,
@@ -36,37 +39,39 @@ final public class ServerThread extends Thread {
 
     @Override
     public void run() {
+
+        websiteOut = getOutputStream();
+        websiteIn = getBufferedReader();
         try {
-            OutputStream out = s.getOutputStream();
-            BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
             String tmp;
             String reqFile = "/";
 
-            while ((tmp = in.readLine()) != null && !tmp.isEmpty()) {
-                handleRequest(tmp, reqFile, out);
+            while ((tmp = websiteIn.readLine()) != null && !tmp.isEmpty()) {
+                handleRequest(tmp);
             }
 
             String sdPath = Environment.getExternalStorageDirectory().getPath();
             File file = new File(sdPath + "/website" + reqFile);
+            Path path = file.toPath();
 
-            if (file.exists()) {
-                handleFile(out, file);
+            if (Files.isRegularFile(path)) {
+                handleFile(file);
             } else {
                 File[] files = file.listFiles();
-                out.write("HTTP/1.1 200 OK\n".getBytes());
-                out.write("Content-Type: text/html\n".getBytes());
-                out.write("\n".getBytes());
+                writeLineToWebsite("HTTP/1.1 200 OK");
+                writeLineToWebsite("Content-Type: text/html");
+                writeLineToWebsite("");
                 assert files != null;
                 for (File someFile : files) {
-                    out.write(someFile.getName().getBytes());
+                    writeLineToWebsite(someFile.getName());
                 }
-                handleError(out);
             }
 
-            out.flush();
+            websiteOut.flush();
             s.close();
             Log.d("SERVER", "Socket Closed");
         } catch (IOException e) {
+            handleError();
            handleExeption(e);
         } finally {
             Log.d("SERVER", "Releasing semaphore");
@@ -74,41 +79,46 @@ final public class ServerThread extends Thread {
         }
     }
 
-    void handleFile(OutputStream out, File file) throws IOException {
+    void handleFile(File file) throws IOException {
         String extension = MimeTypeMap.getFileExtensionFromUrl(file.getAbsolutePath());
         if (extension.equals("json")) {
             Log.d("SERVER", "Sending json...");
-            out.write("HTTP/1.1 200 OK\n".getBytes());
-            out.write("Content-Type: application/json\n".getBytes());
-            String str2 = "Content-Length: " + file.length() + "\n";
-            out.write(str2.getBytes());
-            out.write("\n".getBytes());
+            writeLineToWebsite("HTTP/1.1 200 OK");
+            writeLineToWebsite("Content-Type: application/json");
+            String str2 = "Content-Length: " + file.length();
+            writeLineToWebsite(str2);
+            writeLineToWebsite("");
             byte[] bytes = Files.readAllBytes(file.toPath());
             for (byte aByte : bytes) {
-                out.write(aByte);
+                websiteOut.write(aByte);
             }
         } else {
             String mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
-            out.write("HTTP/1.1 200 OK\n".getBytes());
-            String str2 = "Content-Type: " + mimeType + "\n";
-            out.write(str2.getBytes());
-            String str1 = "Content-Length: " + file.length() + "\n";
-            out.write(str1.getBytes());
-            out.write("\n".getBytes());
-            byte[] bytes = Files.readAllBytes(file.toPath());
-            for (byte aByte : bytes) {
-                out.write(aByte);
+            writeLineToWebsite("HTTP/1.1 200 OK");
+            writeLineToWebsite("Content-Type: " + mimeType);
+            String str2 = "Content-Length: " + file.length();
+            writeLineToWebsite(str2);
+            writeLineToWebsite("");
+
+            try (FileInputStream fileInputStream = new FileInputStream(file);
+                 OutputStream os = s.getOutputStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+                os.flush();
             }
         }
     }
 
-    void handleRequest(String tmp, String reqFile, OutputStream out) throws IOException {
+    void handleRequest(String tmp) throws IOException {
         if (tmp.startsWith("GET")) {
             String[] log = {"", " -- [", "", "", " -- ", ""};
             Log.d("HTTPREQUEST", "Request: " + tmp);
             log[2] = Calendar.getInstance().getTime() + "] ";
             log[3] = tmp;
-            reqFile = tmp.split(" ")[1];
+            String reqFile = tmp.split(" ")[1];
             if (reqFile.equals("/")) {
                 reqFile = "/index.html";
             }
@@ -117,7 +127,7 @@ final public class ServerThread extends Thread {
             }
             // probably a command then
             if (reqFile.startsWith("/cmd")) {
-                handleCommand(reqFile, out);
+                handleCommand(reqFile);
             }
             if (tmp.startsWith("Host:")) {
                 log[0] = tmp.substring(6);
@@ -136,7 +146,7 @@ final public class ServerThread extends Thread {
         }
     }
 
-    void handleCommand(String reqFile, OutputStream out) throws IOException {
+    void handleCommand(String reqFile) {
         String formatted = reqFile.substring(5);
         String[] cmd;
         if (formatted.contains("%20")) {
@@ -144,29 +154,76 @@ final public class ServerThread extends Thread {
         } else {
             cmd = new String[]{formatted};
         }
+        handleProccess(cmd);
+    }
+
+    void handleProccess(String[] cmd) {
         ProcessBuilder pb = new ProcessBuilder(cmd);
-        Process p = pb.start();
+        Process p = null;
+        try {
+            p = pb.start();
+        } catch (IOException e) {
+            Log.d("PROCESS", "Could not start Processs");
+        }
+        assert p != null;
         BufferedReader p_in = new BufferedReader(new InputStreamReader(p.getInputStream()));
         BufferedReader p_error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-        Log.d("PROCESS", "Process was a success!");
+        Log.d("PROCESS", "Process was created!");
+
         String p_str;
         String p_error_str;
 
-        while ((p_str = p_in.readLine()) != null && !p_str.isEmpty()) {
-            Log.d("PROCESS", p_str);
-            out.write("HTTP/1.1 200 OK\n".getBytes());
-            out.write("Content-Type: text/html\n".getBytes());
-            out.write("\n".getBytes());
-            out.write(p_str.getBytes());
+        try {
+            while ((p_str = p_in.readLine()) != null && !p_str.isEmpty()) {
+                Log.d("PROCESS", p_str);
+                writeLineToWebsite("HTTP/0.1 200 OK");
+                writeLineToWebsite("Content-Type: text/html");
+                writeLineToWebsite("");
+                writeLineToWebsite(p_str);
+            }
+        } catch (IOException e) {
+           Log.d("PROCESS", "Could not read proccess");
         }
-        while ((p_error_str = p_error.readLine()) != null && !p_error_str.isEmpty()) {
-            Log.d("PROCESS", "error: " + p_error_str);
+
+        try {
+            while ((p_error_str = p_error.readLine()) != null && !p_error_str.isEmpty()) {
+                Log.d("PROCESS", "error: " + p_error_str);
+                handleError();
+            }
+        } catch (IOException e) {
+            Log.d("PROCESS", "could not read proccess error");
         }
     }
-    void handleError(OutputStream out) throws IOException {
-        out.write("HTTP/1.1 404 OK\n".getBytes());
-        out.write("Content-Type: text/html\n".getBytes());
-        out.write("\n".getBytes());
-        out.write("<html><h1>Your page was not found</h1></html>\n".getBytes());
+
+    void handleError() {
+        writeLineToWebsite("HTTP/1.1 404 OK");
+        writeLineToWebsite("Content-Type: text/html");
+        writeLineToWebsite("");
+        writeLineToWebsite("<html><h1>Your page was not found</h1></html>");
+    }
+
+    void writeLineToWebsite(String line) {
+        byte[] bytes = line.getBytes();
+        try {
+            websiteOut.write(bytes);
+            websiteOut.write("\n".getBytes());
+        } catch (IOException e) {
+            Log.d("SERVER", "Could not write line");
+        }
+    }
+
+    OutputStream getOutputStream() {
+        OutputStream out = null;
+        try {
+            out = s.getOutputStream();
+        } catch (IOException e) {
+            Log.d("SERVER", "Could not get OutputStream");
+        }
+        return out;
+    }
+
+    BufferedReader getBufferedReader() {
+        BufferedReader in = s.getBufferedReader();
+        return in;
     }
 }

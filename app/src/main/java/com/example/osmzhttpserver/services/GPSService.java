@@ -1,4 +1,4 @@
-package com.example.osmzhttpserver;
+package com.example.osmzhttpserver.services;
 
 import android.app.Activity;
 import android.content.Context;
@@ -8,6 +8,8 @@ import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 
+import com.example.osmzhttpserver.DataModel;
+import com.example.osmzhttpserver.DataProvider;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -15,7 +17,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 public class GPSService {
     private final FusedLocationProviderClient fusedLocationProviderClient;
     Context context;
-    DataProvider dataProvider;
+    public DataProvider dataProvider;
 
     public GPSService(Context context) {
         this.context = context;

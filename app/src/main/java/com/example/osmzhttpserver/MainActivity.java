@@ -15,6 +15,9 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.osmzhttpserver.services.GPSService;
+import com.example.osmzhttpserver.services.SensorsService;
+
 import java.io.File;
 import java.util.Arrays;
 
